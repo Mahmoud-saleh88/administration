@@ -1,0 +1,214 @@
+{%load static%}
+<!DOCTYPE html>
+<html dir="rtl">
+  <head>
+    <title>Menu</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  </head>
+  <style>
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background-color: #FFFAF0;
+      z-index: 999;
+    }
+    
+    .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px;
+    }
+    
+    .logo {
+      color: #000000;
+      font-size: 20px;
+      text-decoration: none;
+    }
+    
+    .navbar-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+    
+    .nav-item {
+      margin-right: 10px;
+    }
+    
+    .navbar-link {
+      color: #FFFAF0;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    
+    .header-btn-group {
+      display: flex;
+      align-items: center;
+    }
+    
+    .search-btn,
+    .btn {
+      margin-right: 10px;
+    }
+    
+    .nav-toggle-btn {
+      display: none;
+    }
+    </style>
+    
+    <header class="header" data-header>
+      <div class="container">
+        <h1>
+          <a href="#" class="logo">الإدارة العامة للأمن المركزى بشمال سيناء<span class="span">.</span></a>
+        </h1>
+    
+        <nav class="navbar" data-navbar>
+          <ul class="navbar-list">
+            <li class="nav-item">
+              <a href="#home" class="navbar-link" data-nav-link>الصفحة الرئيسية</a>
+            </li>
+            <li class="nav-item">
+              <a href="menu_and_order" class="navbar-link" data-nav-link>المنيو و عمل أوردر</a>
+            </li>
+            <li class="nav-item">
+              <a href="#food-menu" class="navbar-link" data-nav-link>الإعدادات</a>
+            </li>
+            <li class="nav-item">
+              <a href="dashboard" class="navbar-link" data-nav-link>الإحصائيات</a>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="navbar-link" data-nav-link>إدارة المخزن</a>
+            </li>
+          </ul>
+        </nav>
+    
+        <div class="header-btn-group">
+          <button class="search-btn" aria-label="Search" data-search-btn>
+            <ion-icon name="search-outline"></ion-icon>
+          </button>
+          <a href=""><button class="btn btn-hover">تسجيل الدخول</button></a>
+          <button class="nav-toggle-btn" aria-label="Toggle Menu" data-menu-toggle-btn>
+            <span class="line top"></span>
+            <span class="line middle"></span>
+            <span class="line bottom"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+    
+<body>
+  <div class="grid-container">
+    <div class="grid-item1" width="30%" length= "20%">
+        <div class="grid-item1-subitem1">
+            <image src="{% static '/images/Untitled-2.png' %}" width=100px >
+        </div>
+    
+  <h1>Menu</h1>
+  <section class="section section-divider gray about" id="about">
+    <div class="container">
+      <h2>فاتورة جديدة:</h2>
+        <!-- Existing content -->
+        <table>
+          <tr>
+            <th>Menu Item</th>
+            <th>Quantity</th>
+            <th>Price</th>
+          </tr>
+          {% for menu_item in menu_items %}
+            <tr>
+              <td>{{ menu_item.name }}</td>
+              <td>${{ menu_item.price }}</td>
+              <td><input class="quantity-input" type="number" min="1" value="1"></td>
+              <td><button class="add-to-order-btn" data-menu-item-id="{{ menu_item.id }}" data-menu-item-name="{{ menu_item.name }}" data-menu-item-price="{{ menu_item.price }}">Add to Order</button></td>
+            </tr>
+          {% endfor %}
+        </table>
+          <div class="current-order">
+            <ul id="receipt-items">
+              <!-- Receipt items will be dynamically added here -->
+            </ul>
+            <div class="total-sum">
+              Total Sum: <span id="total-sum">$0.00</span>
+            </div>
+        </div>
+          <button id="start-order-btn">Start Order</button>
+          <button id="save-print-btn">Save and Print</button>
+          <button id="cancel-order-btn">Cancel Order</button>
+        </div>
+       
+</section>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  $(document).ready(function() {
+    $(".add-to-order-btn").prop("disabled", true); // Disable add-to-order buttons initially
+
+    $("#start-order-btn").click(function() {
+      $(".add-to-order-btn").prop("disabled", false); // Enable add-to-order buttons
+    });
+
+    $(".add-to-order-btn").click(function() {
+      var menuItemName = $(this).data("menu-item-name");
+      var menuItemPrice = $(this).data("menu-item-price");
+      var quantity = parseInt($(this).siblings(".quantity-input").val());
+      var subTotal = menuItemPrice * quantity;
+      var receiptItem = '<li class="service"><p class="itemtext">' + menuItemName + '</p><p class="itemtext">Quantity: ' + quantity + '</p><p class="itemtext">Sub Total: $' + subTotal.toFixed(2) + '</p></li>';
+      $("#receipt-items").append(receiptItem);
+      updateTotalSum();
+
+      // Save the order in the database using Ajax request
+      var menuItemId = $(this).data("menu-item-id");
+      saveOrder(menuItemId, quantity);
+
+      // Reset the quantity field
+      $(this).siblings(".quantity-input").val(1);
+    });
+
+    $("#save-print-btn").click(function() {
+      // Perform save and print logic here
+      resetReceipt();
+      $(".add-to-order-btn").prop("disabled", true); // Disable add-to-order buttons
+    });
+
+    $("#cancel-order-btn").click(function() {
+      resetReceipt();
+      $(".add-to-order-btn").prop("disabled", true); // Disable add-to-order buttons
+    });
+
+    function resetReceipt() {
+      $("#receipt-items").empty();
+      updateTotalSum();
+    }
+
+    function updateTotalSum() {
+      var totalSum = 0;
+      $("#receipt-items .service").each(function() {
+        var subTotal = parseFloat($(this).find(".itemtext").last().text().split("$")[1]);
+        totalSum += subTotal;
+      });
+      $("#total-sum").text("$" + totalSum.toFixed(2));
+    }
+
+    function saveOrder(menuItemId, quantity) {
+      $.ajax({
+        url: "http://localhost:<port>/api/cashier_order",  // Replace with the appropriate URL for saving the order
+        method: "POST",
+        data: {
+          menu_item_id: menuItemId,
+          quantity: quantity
+        },
+        success: function(response) {
+          // Handle the success response
+          console.log("Order saved successfully.");
+        },
+        error: function(xhr, status, error) {
+          // Handle the error response
+          console.error("Error saving the order:", error);
+        }
+      });
+    }
+  });
+</script>
